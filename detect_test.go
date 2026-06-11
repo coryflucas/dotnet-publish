@@ -30,7 +30,8 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		projectParser = &fakes.ProjectParser{}
 		projectParser.FindProjectFileCall.Returns.String = filepath.Join(workingDir, "app.csproj")
-		projectParser.ParseVersionCall.Returns.String = "6.0.0"
+		projectParser.ParseVersionCall.Returns.Version = "6.0.0"
+		projectParser.ParseVersionCall.Returns.Source = filepath.Join(workingDir, "app.csproj")
 
 		detect = dotnetpublish.Detect(
 			dotnetpublish.Configuration{},
@@ -73,6 +74,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(projectParser.FindProjectFileCall.Receives.Root).To(Equal(workingDir))
 		Expect(projectParser.ParseVersionCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
+		Expect(projectParser.ParseVersionCall.Receives.RootDir).To(Equal(workingDir))
 		Expect(projectParser.NodeIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 		Expect(projectParser.NPMIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 	})
@@ -119,6 +121,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(projectParser.FindProjectFileCall.Receives.Root).To(Equal(workingDir))
 			Expect(projectParser.ParseVersionCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
+			Expect(projectParser.ParseVersionCall.Receives.RootDir).To(Equal(workingDir))
 			Expect(projectParser.NodeIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 			Expect(projectParser.NPMIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 		})
@@ -173,6 +176,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(projectParser.FindProjectFileCall.Receives.Root).To(Equal(workingDir))
 			Expect(projectParser.ParseVersionCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
+			Expect(projectParser.ParseVersionCall.Receives.RootDir).To(Equal(workingDir))
 			Expect(projectParser.NodeIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 			Expect(projectParser.NPMIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "app.csproj")))
 		})
@@ -181,6 +185,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	context("when the .csproj file is not at the base of the directory and project_path is set via $BP_DOTNET_PROJECT_PATH", func() {
 		it.Before(func() {
 			projectParser.FindProjectFileCall.Returns.String = filepath.Join(workingDir, "src/proj1", "app.csproj")
+			projectParser.ParseVersionCall.Returns.Source = filepath.Join(workingDir, "src/proj1", "app.csproj")
 			detect = dotnetpublish.Detect(
 				dotnetpublish.Configuration{ProjectPath: "src/proj1"},
 				projectParser,
@@ -222,6 +227,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(projectParser.FindProjectFileCall.Receives.Root).To(Equal(filepath.Join(workingDir, "src/proj1")))
 			Expect(projectParser.ParseVersionCall.Receives.Path).To(Equal(filepath.Join(workingDir, "src/proj1", "app.csproj")))
+			Expect(projectParser.ParseVersionCall.Receives.RootDir).To(Equal(workingDir))
 			Expect(projectParser.NodeIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "src/proj1", "app.csproj")))
 			Expect(projectParser.NPMIsRequiredCall.Receives.Path).To(Equal(filepath.Join(workingDir, "src/proj1", "app.csproj")))
 		})

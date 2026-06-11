@@ -86,18 +86,24 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("ParseVersion", func() {
-		var path string
+		var (
+			path string
+			root string
+		)
 
 		it.Before(func() {
-			file, err := os.CreateTemp("", "app.csproj")
+			var err error
+			root, err = os.MkdirTemp("", "workingDir")
 			Expect(err).NotTo(HaveOccurred())
 
-			path = file.Name()
+			path = filepath.Join(root, "app.csproj")
+			file, err := os.Create(path)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(file.Close()).To(Succeed())
 		})
 
 		it.After(func() {
-			Expect(os.RemoveAll(path)).To(Succeed())
+			Expect(os.RemoveAll(root)).To(Succeed())
 		})
 
 		context("when RuntimeFrameworkVersion is set", func() {
@@ -112,10 +118,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, err := parser.ParseVersion(path)
+				version, source, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.3"))
+				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -132,10 +139,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("returns the version", func() {
-					version, err := parser.ParseVersion(path)
+					version, source, err := parser.ParseVersion(path, root)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(version).To(Equal(tf[3:] + ".0"))
+					Expect(source).To(Equal(path))
 				})
 			})
 		}
@@ -152,10 +160,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, err := parser.ParseVersion(path)
+				version, source, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.0"))
+				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -171,10 +180,135 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, err := parser.ParseVersion(path)
+				version, source, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.0"))
+				Expect(source).To(Equal(path))
+			})
+		})
+
+		context("when TargetFramework is set in Directory.Build.props in the same directory", func() {
+			var propsPath string
+
+			it.Before(func() {
+				propsPath = filepath.Join(root, "Directory.Build.props")
+
+				Expect(os.WriteFile(path, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <OutputType>Exe</OutputType>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+				Expect(os.WriteFile(propsPath, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+			})
+
+			it("returns the version and source", func() {
+				version, source, err := parser.ParseVersion(path, root)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(version).To(Equal("8.0.0"))
+				Expect(source).To(Equal(propsPath))
+			})
+		})
+
+		context("when TargetFramework is set in Directory.Build.props in a parent directory", func() {
+			var propsPath string
+
+			it.Before(func() {
+				projectDir := filepath.Join(root, "src")
+				Expect(os.MkdirAll(projectDir, os.ModePerm)).To(Succeed())
+
+				path = filepath.Join(projectDir, "app.csproj")
+				propsPath = filepath.Join(root, "Directory.Build.props")
+
+				Expect(os.WriteFile(path, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <OutputType>Exe</OutputType>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+				Expect(os.WriteFile(propsPath, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <TargetFramework>net9.0</TargetFramework>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+			})
+
+			it("returns the version and source", func() {
+				version, source, err := parser.ParseVersion(path, root)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(version).To(Equal("9.0.0"))
+				Expect(source).To(Equal(propsPath))
+			})
+		})
+
+		context("when RuntimeFrameworkVersion is set in Directory.Build.props", func() {
+			var propsPath string
+
+			it.Before(func() {
+				propsPath = filepath.Join(root, "Directory.Build.props")
+
+				Expect(os.WriteFile(path, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <OutputType>Exe</OutputType>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+				Expect(os.WriteFile(propsPath, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <RuntimeFrameworkVersion>1.2.3</RuntimeFrameworkVersion>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+			})
+
+			it("returns the version and source", func() {
+				version, source, err := parser.ParseVersion(path, root)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(version).To(Equal("1.2.3"))
+				Expect(source).To(Equal(propsPath))
+			})
+		})
+
+		context("when TargetFramework is set in the project file and Directory.Build.props", func() {
+			it.Before(func() {
+				Expect(os.WriteFile(path, []byte(`
+					<Project>
+					  <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(root, "Directory.Build.props"), []byte(`
+					<Project>
+					  <PropertyGroup>
+              <TargetFramework>net9.0</TargetFramework>
+            </PropertyGroup>
+					</Project>
+				`), 0600)).To(Succeed())
+			})
+
+			it("returns the project file version and source", func() {
+				version, source, err := parser.ParseVersion(path, root)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(version).To(Equal("8.0.0"))
+				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -185,7 +319,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, err := parser.ParseVersion(path)
+					_, _, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to read project file"))
 				})
 			})
@@ -196,7 +330,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, err := parser.ParseVersion(path)
+					_, _, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to parse project file"))
 				})
 			})
@@ -213,7 +347,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, err := parser.ParseVersion(path)
+					_, _, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to find version in project file: missing or invalid TargetFramework property"))
 				})
 			})
