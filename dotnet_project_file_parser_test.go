@@ -118,11 +118,10 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, source, err := parser.ParseVersion(path, root)
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.3"))
-				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -139,11 +138,10 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("returns the version", func() {
-					version, source, err := parser.ParseVersion(path, root)
+					version, err := parser.ParseVersion(path, root)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(version).To(Equal(tf[3:] + ".0"))
-					Expect(source).To(Equal(path))
 				})
 			})
 		}
@@ -160,11 +158,10 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, source, err := parser.ParseVersion(path, root)
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.0"))
-				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -180,11 +177,10 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns the version", func() {
-				version, source, err := parser.ParseVersion(path, root)
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.0"))
-				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -210,12 +206,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				`), 0600)).To(Succeed())
 			})
 
-			it("returns the version and source", func() {
-				version, source, err := parser.ParseVersion(path, root)
+			it("returns the version", func() {
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("8.0.0"))
-				Expect(source).To(Equal(propsPath))
 			})
 		})
 
@@ -245,12 +240,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				`), 0600)).To(Succeed())
 			})
 
-			it("returns the version and source", func() {
-				version, source, err := parser.ParseVersion(path, root)
+			it("returns the version", func() {
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("9.0.0"))
-				Expect(source).To(Equal(propsPath))
 			})
 		})
 
@@ -276,12 +270,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				`), 0600)).To(Succeed())
 			})
 
-			it("returns the version and source", func() {
-				version, source, err := parser.ParseVersion(path, root)
+			it("returns the version", func() {
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("1.2.3"))
-				Expect(source).To(Equal(propsPath))
 			})
 		})
 
@@ -303,12 +296,11 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				`), 0600)).To(Succeed())
 			})
 
-			it("returns the project file version and source", func() {
-				version, source, err := parser.ParseVersion(path, root)
+			it("returns the project file version", func() {
+				version, err := parser.ParseVersion(path, root)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(version).To(Equal("8.0.0"))
-				Expect(source).To(Equal(path))
 			})
 		})
 
@@ -319,7 +311,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, _, err := parser.ParseVersion(path, root)
+					_, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to read project file"))
 				})
 			})
@@ -330,7 +322,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, _, err := parser.ParseVersion(path, root)
+					_, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to parse project file"))
 				})
 			})
@@ -347,7 +339,7 @@ func testProjectFileParser(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("errors", func() {
-					_, _, err := parser.ParseVersion(path, root)
+					_, err := parser.ParseVersion(path, root)
 					Expect(err.Error()).To(ContainSubstring("failed to find version in project file: missing or invalid TargetFramework property"))
 				})
 			})

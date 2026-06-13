@@ -41,13 +41,13 @@ func (p ProjectFileParser) FindProjectFile(path string) (string, error) {
 	return "", nil
 }
 
-func (p ProjectFileParser) ParseVersion(path, rootDir string) (string, string, error) {
+func (p ProjectFileParser) ParseVersion(path, rootDir string) (string, error) {
 	version, found, err := parseVersionFromFile(path, "project file")
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	if found {
-		return version, path, nil
+		return version, nil
 	}
 
 	rootDir = filepath.Clean(rootDir)
@@ -55,16 +55,16 @@ func (p ProjectFileParser) ParseVersion(path, rootDir string) (string, string, e
 		propsPath := filepath.Join(dir, "Directory.Build.props")
 		_, err = os.Stat(propsPath)
 		if err != nil && !os.IsNotExist(err) {
-			return "", "", err
+			return "", err
 		}
 
 		if err == nil {
 			version, found, err = parseVersionFromFile(propsPath, "Directory.Build.props")
 			if err != nil {
-				return "", "", err
+				return "", err
 			}
 			if found {
-				return version, propsPath, nil
+				return version, nil
 			}
 		}
 
@@ -73,7 +73,7 @@ func (p ProjectFileParser) ParseVersion(path, rootDir string) (string, string, e
 		}
 	}
 
-	return "", "", errors.New("failed to find version in project file: missing or invalid TargetFramework property")
+	return "", errors.New("failed to find version in project file: missing or invalid TargetFramework property")
 }
 
 func parseVersionFromFile(path, fileDescription string) (string, bool, error) {
